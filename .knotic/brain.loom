@@ -1,0 +1,72 @@
+{
+  "version": 3,
+  "projectName": "actor_new",
+  "createdAt": "2026-06-05T10:59:02.309Z",
+  "updatedAt": "2026-06-05T13:31:40.570Z",
+  "lastHardenedAt": "2026-06-05T13:31:40.570Z",
+  "messages": [
+    {
+      "key": "project_context/purpose",
+      "role": "system",
+      "content": "The project is an Apify actor using Crawlee + Playwright for web scraping. The current plan (2026-06-05) integrates patchright (stealth Playwright fork) and adds a dedicated stealth module (`src/stealth.ts`) for fingerprint rotation, anti-detection hooks, and human simulation. All profiles are forced to Italian geography (timezone, locale, geolocation) to match Italian proxy IPs.",
+      "category": "project_context",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-05T13:31:40.569Z",
+      "source": "hardening"
+    },
+    {
+      "key": "project_structure/source_layout",
+      "role": "system",
+      "content": "Source files live in `src/`. Key files:\n- `src/main.ts`: Entry point, sets up `PlaywrightCrawler` with launch options, imports `router` from `./routes.ts`.\n- `src/routes.ts`: Route handlers (`default`, `detail`, `list`) using Crawlee router.\n- `src/stealth.ts`: New module (Step 2 of plan) with fingerprint rotation, pre-navigation hooks, human simulation utilities.\n- `test/`: Test files (Jest).",
+      "category": "project_structure",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-05T13:31:40.570Z",
+      "source": "hardening"
+    },
+    {
+      "key": "code_rules/typescript_strictness",
+      "role": "system",
+      "content": "TypeScript strict mode is enforced. No `any` types – use `unknown` or proper interfaces. Do not import `@crawlee/playwright` inside `src/stealth.ts`; use `patchright-core` only for type `Page`. Import paths ending in `.ts` are not allowed unless `allowImportingTsExtensions` is set (currently not; `src/main.ts:16` has a pre-existing error from `import { router } from './routes.ts'`). All functions exported from `src/stealth.ts` must have JSDoc.",
+      "category": "code_rules",
+      "ttlDays": 14,
+      "updatedAt": "2026-06-05T13:31:40.570Z",
+      "source": "hardening"
+    },
+    {
+      "key": "infrastructure/docker_environment",
+      "role": "system",
+      "content": "Docker image: `apify/actor-node-playwright-chrome:24-1.60.0` (Node 20, Linux amd64, pre-installed Playwright Chromium). Local development on Windows (PowerShell) with `ts-node`. The image may need additional system deps if patchright requires them (not yet verified).",
+      "category": "infrastructure",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-05T13:31:40.570Z",
+      "source": "hardening"
+    },
+    {
+      "key": "file_map/src_stealth.ts",
+      "role": "system",
+      "content": "File `src/stealth.ts` (created 2026-06-05) centralizes all stealth logic. Key exports:\n- `FINGERPRINT_POOL`: Array of 5 profiles, all with timezone `Europe/Rome`, locale `it-IT`, and geolocations in Italian cities (Roma, Milano, Napoli, Torino, Palermo). Viewports and user agents vary.\n- `getRandomProfile()`: Returns random profile from pool.\n- `createStealthLaunchOptions(options?)`: Returns randomized launch options with viewport jitter and Chrome anti-detection args.\n- `createNavigationHooks()`: Returns two pre-navigation hooks: (1) Canvas/WebGL/WebRTC spoofing via `addInitScript`, (2) navigator/screen property overrides, viewport, Accept-Language header.\n- `randomizeFingerprint(page, profile?)`: Applies profile to a page – viewport, user agent header, timezone, geolocation, locale, permissions.\n- `humanizeMouseMove(page, start, end, steps?)`: Cubic Bézier mouse movement with jitter and variable delay.\n- `humanizeScroll(page, distance, duration?)`: Ease-in-out scroll simulation with jitter.\n- `FingerprintProfile` interface: viewport, userAgent, timezone, locale, geolocation, platform, hardwareConcurrency, deviceMemory, vendor.",
+      "category": "file_map",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-05T13:31:40.570Z",
+      "source": "hardening"
+    },
+    {
+      "key": "flow_logic/stealth_rotation_and_human_simulation",
+      "role": "system",
+      "content": "Stealth rotation flow:\n1. At browser launch: `createStealthLaunchOptions()` provides launch options with randomized viewport and Chrome args.\n2. Before each navigation: `createNavigationHooks()` registers hooks that run `addInitScript` for Canvas/WebGL/WebRTC, then override navigator/screen properties, set viewport, and set Accept-Language header.\n3. Route handlers call `randomizeFingerprint()` to ensure consistent Italian geolocation and timezone before interacting. If timezone emulation fails on page, fallback overrides `Intl.DateTimeFormat`.\n4. Human simulation helpers (`humanizeMouseMove`, `humanizeScroll`) are called during page interaction to mimic natural behavior. They use Bézier curves, ease-in-out timing, and random jitter.",
+      "category": "flow_logic",
+      "ttlDays": 21,
+      "updatedAt": "2026-06-05T13:31:40.570Z",
+      "source": "hardening"
+    },
+    {
+      "key": "dependencies/key_packages",
+      "role": "system",
+      "content": "Core packages:\n- `@crawlee/playwright` (^3.15.3) – Crawlee with Playwright integration.\n- `patchright` (^1.10.0) – Stealth fork of Playwright.\n- `patchright-core` (^1.10.0) – Core types for patchright.\n- `apify` – Apify SDK.\n- `jest`, `ts-jest` – Testing (devDependencies).\n- `@types/node` (^20) – devDependencies.\nNote: `patchright` and `patchright-core` are listed but only now imported in `src/stealth.ts`.",
+      "category": "dependencies",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-05T13:31:40.570Z",
+      "source": "hardening"
+    }
+  ]
+}
