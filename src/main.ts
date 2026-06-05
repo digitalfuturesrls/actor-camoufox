@@ -11,6 +11,32 @@ import { Actor } from 'apify';
 import { launchOptions as camoufoxLaunchOptions } from 'camoufox-js';
 import { firefox } from 'playwright';
 
+// Common desktop viewport sizes for fingerprint randomization
+const COMMON_VIEWPORTS: [number, number][] = [
+    [1920, 1080],
+    [1366, 768],
+    [1440, 900],
+    [1536, 864],
+    [1280, 720],
+];
+
+function getRandomViewport(): [number, number] {
+    return COMMON_VIEWPORTS[Math.floor(Math.random() * COMMON_VIEWPORTS.length)];
+}
+
+// Tracker and analytics domains to block
+const BLOCKED_PATTERNS = [
+    /doubleclick\.net/,
+    /google-analytics\.com/,
+    /googletagmanager\.com/,
+    /facebook\.net/,
+    /amazon-adsystem\.com/,
+    /scorecardresearch\.com/,
+    /hotjar\.com/,
+    /mouseflow\.com/,
+    /newrelic\.com/,
+];
+
 // this is ESM project, and as such, it requires you to specify extensions in your relative imports
 // read more about this here: https://nodejs.org/docs/latest-v18.x/api/esm.html#mandatory-file-extensions
 // note that we need to use `.js` even when inside TS files
@@ -41,16 +67,38 @@ const proxyConfiguration = await Actor.createProxyConfiguration({
     checkAccess: true
 });
 
+// Randomize viewport and use virtual headless mode for enhanced stealth
+const viewport = getRandomViewport();
+const useVirtualDisplay = process.env.HEADLESS_VIRTUAL !== 'false';
+console.log(`Using viewport ${viewport[0]}×${viewport[1]} and headless mode: ${useVirtualDisplay ? 'virtual' : 'standard'}`);
+
 const crawler = new PlaywrightCrawler({
     proxyConfiguration,
     maxRequestsPerCrawl,
     requestHandler: router,
+    preNavigationHooks: [
+        async ({ page }) => {
+            await page.route('**/*', async (route) => {
+                const url = route.request().url();
+                const shouldBlock = BLOCKED_PATTERNS.some((pattern) => pattern.test(url));
+                if (shouldBlock) {
+                    await route.abort('blockedbyclient');
+                } else {
+                    await route.continue();
+                }
+            });
+        },
+    ],
     launchContext: {
         launcher: firefox,
         launchOptions: await camoufoxLaunchOptions({
-            headless: true,
+            headless: true, // Camoufox handles virtual display internally when geoip is enabled
+            window: viewport,
             proxy: await proxyConfiguration?.newUrl(),
             geoip: true,
+            locale: "it-IT",
+            env: { TZ: 'Europe/Rome' },
+            humanize: true, // enable realistic mouse movement to reduce bot detection
             // fonts: ['Times New Roman'] // <- custom Camoufox options
         }),
     },

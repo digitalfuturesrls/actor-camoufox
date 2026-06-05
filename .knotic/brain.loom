@@ -2,71 +2,62 @@
   "version": 3,
   "projectName": "actor_new",
   "createdAt": "2026-06-05T10:59:02.309Z",
-  "updatedAt": "2026-06-05T13:31:40.570Z",
+  "updatedAt": "2026-06-05T18:12:13.234Z",
   "lastHardenedAt": "2026-06-05T13:31:40.570Z",
   "messages": [
     {
-      "key": "project_context/purpose",
+      "key": "project_context",
       "role": "system",
-      "content": "The project is an Apify actor using Crawlee + Playwright for web scraping. The current plan (2026-06-05) integrates patchright (stealth Playwright fork) and adds a dedicated stealth module (`src/stealth.ts`) for fingerprint rotation, anti-detection hooks, and human simulation. All profiles are forced to Italian geography (timezone, locale, geolocation) to match Italian proxy IPs.",
+      "content": "Apify Actor (name: my-actor, package: crawlee-playwright-typescript-camoufox) — a serverless web scraping/crawling program running on the Apify platform. Uses PlaywrightCrawler with Camoufox-js anti-detection browser fingerprinting + firefox launcher. Template: ts-crawlee-playwright-camoufox. Accepts JSON input (startUrls, maxRequestsPerCrawl), produces structured dataset output (url, title). Runs in Docker containers, supports standby mode, graceful abort, and proxy (RESIDENTIAL, IT country).",
       "category": "project_context",
       "ttlDays": 30,
-      "updatedAt": "2026-06-05T13:31:40.569Z",
-      "source": "hardening"
+      "updatedAt": "2026-06-05T18:12:13.234Z",
+      "source": "context_agent"
     },
     {
-      "key": "project_structure/source_layout",
+      "key": "dependencies_stack",
       "role": "system",
-      "content": "Source files live in `src/`. Key files:\n- `src/main.ts`: Entry point, sets up `PlaywrightCrawler` with launch options, imports `router` from `./routes.ts`.\n- `src/routes.ts`: Route handlers (`default`, `detail`, `list`) using Crawlee router.\n- `src/stealth.ts`: New module (Step 2 of plan) with fingerprint rotation, pre-navigation hooks, human simulation utilities.\n- `test/`: Test files (Jest).",
-      "category": "project_structure",
-      "ttlDays": 30,
-      "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
-    },
-    {
-      "key": "code_rules/typescript_strictness",
-      "role": "system",
-      "content": "TypeScript strict mode is enforced. No `any` types – use `unknown` or proper interfaces. Do not import `@crawlee/playwright` inside `src/stealth.ts`; use `patchright-core` only for type `Page`. Import paths ending in `.ts` are not allowed unless `allowImportingTsExtensions` is set (currently not; `src/main.ts:16` has a pre-existing error from `import { router } from './routes.ts'`). All functions exported from `src/stealth.ts` must have JSDoc.",
-      "category": "code_rules",
-      "ttlDays": 14,
-      "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
-    },
-    {
-      "key": "infrastructure/docker_environment",
-      "role": "system",
-      "content": "Docker image: `apify/actor-node-playwright-chrome:24-1.60.0` (Node 20, Linux amd64, pre-installed Playwright Chromium). Local development on Windows (PowerShell) with `ts-node`. The image may need additional system deps if patchright requires them (not yet verified).",
-      "category": "infrastructure",
-      "ttlDays": 30,
-      "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
-    },
-    {
-      "key": "file_map/src_stealth.ts",
-      "role": "system",
-      "content": "File `src/stealth.ts` (created 2026-06-05) centralizes all stealth logic. Key exports:\n- `FINGERPRINT_POOL`: Array of 5 profiles, all with timezone `Europe/Rome`, locale `it-IT`, and geolocations in Italian cities (Roma, Milano, Napoli, Torino, Palermo). Viewports and user agents vary.\n- `getRandomProfile()`: Returns random profile from pool.\n- `createStealthLaunchOptions(options?)`: Returns randomized launch options with viewport jitter and Chrome anti-detection args.\n- `createNavigationHooks()`: Returns two pre-navigation hooks: (1) Canvas/WebGL/WebRTC spoofing via `addInitScript`, (2) navigator/screen property overrides, viewport, Accept-Language header.\n- `randomizeFingerprint(page, profile?)`: Applies profile to a page – viewport, user agent header, timezone, geolocation, locale, permissions.\n- `humanizeMouseMove(page, start, end, steps?)`: Cubic Bézier mouse movement with jitter and variable delay.\n- `humanizeScroll(page, distance, duration?)`: Ease-in-out scroll simulation with jitter.\n- `FingerprintProfile` interface: viewport, userAgent, timezone, locale, geolocation, platform, hardwareConcurrency, deviceMemory, vendor.",
-      "category": "file_map",
-      "ttlDays": 30,
-      "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
-    },
-    {
-      "key": "flow_logic/stealth_rotation_and_human_simulation",
-      "role": "system",
-      "content": "Stealth rotation flow:\n1. At browser launch: `createStealthLaunchOptions()` provides launch options with randomized viewport and Chrome args.\n2. Before each navigation: `createNavigationHooks()` registers hooks that run `addInitScript` for Canvas/WebGL/WebRTC, then override navigator/screen properties, set viewport, and set Accept-Language header.\n3. Route handlers call `randomizeFingerprint()` to ensure consistent Italian geolocation and timezone before interacting. If timezone emulation fails on page, fallback overrides `Intl.DateTimeFormat`.\n4. Human simulation helpers (`humanizeMouseMove`, `humanizeScroll`) are called during page interaction to mimic natural behavior. They use Bézier curves, ease-in-out timing, and random jitter.",
-      "category": "flow_logic",
-      "ttlDays": 21,
-      "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
-    },
-    {
-      "key": "dependencies/key_packages",
-      "role": "system",
-      "content": "Core packages:\n- `@crawlee/playwright` (^3.15.3) – Crawlee with Playwright integration.\n- `patchright` (^1.10.0) – Stealth fork of Playwright.\n- `patchright-core` (^1.10.0) – Core types for patchright.\n- `apify` – Apify SDK.\n- `jest`, `ts-jest` – Testing (devDependencies).\n- `@types/node` (^20) – devDependencies.\nNote: `patchright` and `patchright-core` are listed but only now imported in `src/stealth.ts`.",
+      "content": "Runtime: Node.js >=20, ESM (type:module). Core: apify ^3.7 (Apify SDK), @crawlee/playwright ^3.15.3, playwright 1.60.0, camoufox-js ^0.9 (anti-detection). Dev: typescript ^6, tsx ^4.20 (runner), vitest ^4.1 (testing), eslint ^9 + @apify/eslint-config + prettier ^3.5. Docker base: apify/actor-node-playwright-camoufox:24-1.60.0. CI: GitHub Actions (Node 24, npm ci, playwright install chromium, build + test). postinstall: npx camoufox-js fetch.",
       "category": "dependencies",
       "ttlDays": 30,
-      "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
+      "updatedAt": "2026-06-05T18:12:13.234Z",
+      "source": "context_agent"
+    },
+    {
+      "key": "actor_flow_logic",
+      "role": "system",
+      "content": "1) Actor.init() — initializes Apify SDK. 2) Actor.getInput<Input>() — reads startUrls[] and maxRequestsPerCrawl from JSON input. 3) Actor.createProxyConfiguration({groups:RESIDENTIAL, countryCode:IT}) — sets up proxy. 4) new PlaywrightCrawler — configured with proxy, maxRequestsPerCrawl, launchContext (firefox launcher + camoufox launchOptions with headless:true, geoip:true, proxy URL). 5) crawler.run(startUrls) — enters crawl loop. Routes (createPlaywrightRouter): default handler enqueues links matching https://apify.com/* with label 'detail'; 'detail' handler extracts page.title() and pushes {url, title} via pushData. 6) Actor.exit() — finalizes. Optional: handle 'aborting' event for graceful shutdown.",
+      "category": "flow_logic",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-05T18:12:13.234Z",
+      "source": "context_agent"
+    },
+    {
+      "key": "code_rules_conventions",
+      "role": "system",
+      "content": "ESM: all relative imports must include .js extension even in TS files (e.g., './routes.js'). TypeScript: extends @apify/tsconfig, target ES2022, module NodeNext, src root, dist output. Lint: @apify/eslint-config/ts.js + eslint-config-prettier; run 'npm run lint'. Format: prettier (printWidth 120, singleQuote, tabWidth 4); run 'npm run format'. Editorconfig: spaces, 4 indent, utf-8, LF eol. Logging: ALWAYS use apify/log (import { log } from 'apify/log') — censors sensitive data. No console.log (allowed but discouraged). Abort: handle Actor.on('aborting') with await setTimeout(1000) + await Actor.exit(). Input: validate early with proper error handling. Proxy: use Actor.createProxyConfiguration, check proxy with checkAccess:true before heavy runs. Testing: vitest with describe/it, purgeDefaultStorages beforeAll, expect dataset items. Never disable standby mode (usesStandbyMode: true in actor.json).",
+      "category": "code_rules",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-05T18:12:13.234Z",
+      "source": "context_agent"
+    },
+    {
+      "key": "file_map",
+      "role": "system",
+      "content": "src/main.ts — Entry point: Actor init, input parsing, proxy config, PlaywrightCrawler creation, crawler.run, Actor.exit. Start here for crawl behavior changes. src/routes.ts — Router/handlers: createPlaywrightRouter with default enqueue handler and 'detail' extraction handler. Start here for scraping logic changes. test/main.test.ts — Vitest integration test: crawls apify.com, verifies dataset output. .actor/actor.json — Apify Actor metadata, name, version, input/output schema references, standby mode config. .actor/input_schema.json — JSON input schema: startUrls (requestListSources editor) + maxRequestsPerCrawl. .actor/output_schema.json — Output template pointing to default dataset URL. .actor/dataset_schema.json — Dataset view config (overview table with title, url). .github/workflows/test.yaml — CI pipeline: checkout, setup-node, npm ci, playwright install chromium, build, test. Dockerfile — Multi-stage build: builder image installs devDeps + builds, final image copies dist + prod deps only.",
+      "category": "file_map",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-05T18:12:13.234Z",
+      "source": "context_agent"
+    },
+    {
+      "key": "infrastructure_build_deploy",
+      "role": "system",
+      "content": "Docker: Multi-stage build with apify/actor-node-playwright-camoufox:24-1.60.0 base. Stage 1 (builder): install all deps (npm install --include=dev), build (tsc). Stage 2 (final): install prod deps only (npm install --omit=dev), copy dist from builder. CMD: node dist/main.js. CI: GitHub Actions workflow on push to main/master and PRs. Steps: checkout@v6, setup-node@v6 with cache, npm ci, npx playwright install --with-deps chromium, npm run build, npm test. Local dev: npm run start:dev (tsx src/main.ts) or apify run. Local storage in storage/ dir is NOT synced to cloud. Deploy: apify push.",
+      "category": "infrastructure",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-05T18:12:13.234Z",
+      "source": "context_agent"
     }
   ]
 }
