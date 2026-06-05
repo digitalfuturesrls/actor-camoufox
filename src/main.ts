@@ -108,16 +108,48 @@ const crawler = new PlaywrightCrawler({
             });
         },
     ],
+    postNavigationHooks: [
+        // Human-like behavior: simulate reading after page load
+        async ({ page }) => {
+            try {
+                // Progressive scroll: 10 steps with 300ms intervals
+                await page.evaluate(async () => {
+                    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+                    const totalHeight = document.body.scrollHeight;
+                    const step = totalHeight / 10;
+                    for (let i = 1; i <= 10; i++) {
+                        window.scrollTo(0, i * step);
+                        await delay(300);
+                    }
+                });
+
+                // Mouse emulation: move mouse to random positions
+                const viewport = page.viewportSize() || { width: 1280, height: 720 };
+                for (let i = 0; i < 3; i++) {
+                    await page.mouse.move(
+                        Math.random() * viewport.width,
+                        Math.random() * viewport.height
+                    );
+                    await page.waitForTimeout(500);
+                }
+
+                // Reading wait: simulate reading time (2-5 seconds)
+                await page.waitForTimeout(2000 + Math.random() * 3000);
+            } catch (err) {
+                log.warning('Post-navigation hooks interrupted', { error: String(err) });
+            }
+        },
+    ],
     launchContext: {
         launcher: firefox,
         launchOptions: await camoufoxLaunchOptions({
-            headless: true, // Camoufox handles virtual display internally when geoip is enabled
-            window: viewport,
+            //headless: true, // Camoufox handles virtual display internally when geoip is enabled
+            //window: viewport,
             proxy: await proxyConfiguration?.newUrl(),
-            geoip: true,
-            locale: "it-IT",
-            env: { TZ: 'Europe/Rome' },
-            humanize: true, // enable realistic mouse movement to reduce bot detection
+            //geoip: true,
+            //locale: "it-IT",
+            //env: { TZ: 'Europe/Rome' },
+            //humanize: true, // enable realistic mouse movement to reduce bot detection
             // fonts: ['Times New Roman'] // <- custom Camoufox options
         }),
     },
