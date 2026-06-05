@@ -50,6 +50,9 @@ RUN npm --quiet set progress=false \
 # Copy built JS files from builder image
 COPY --from=builder --chown=myuser:myuser /home/myuser/dist ./dist
 
+# Download Camoufox browser binaries (not included in base image)
+RUN npx camoufox-js fetch
+
 # Next, copy the remaining files and directories with the source code.
 # Since we do this after NPM install, quick build will be really fast
 # for most source file changes.

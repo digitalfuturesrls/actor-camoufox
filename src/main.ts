@@ -7,7 +7,7 @@
 // For more information, see https://crawlee.dev
 import { PlaywrightCrawler } from '@crawlee/playwright';
 // For more information, see https://docs.apify.com/sdk/js
-import { Actor } from 'apify';
+import { Actor, log } from 'apify';
 import { launchOptions as camoufoxLaunchOptions } from 'camoufox-js';
 import { firefox } from 'playwright';
 
@@ -77,6 +77,25 @@ const crawler = new PlaywrightCrawler({
     maxRequestsPerCrawl,
     requestHandler: router,
     preNavigationHooks: [
+        // Human-like behavior: random delay before navigation
+        async ({ page }, _context) => {
+            try {
+                // Random delay 1-4 seconds to simulate human hesitation
+                await page.waitForTimeout(1000 + Math.random() * 3000);
+            } catch (err) {
+                log.warning('Pre-navigation delay interrupted', { error: String(err) });
+            }
+
+            // Simulate cookie consent acceptance
+            try {
+                await page.evaluate(() => {
+                    document.cookie = 'cookie_consent=true; path=/; max-age=3600';
+                });
+            } catch (err) {
+                log.warning('Cookie consent simulation failed', { error: String(err) });
+            }
+        },
+        // Block trackers and analytics domains
         async ({ page }) => {
             await page.route('**/*', async (route) => {
                 const url = route.request().url();
