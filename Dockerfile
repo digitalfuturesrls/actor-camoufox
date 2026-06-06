@@ -60,8 +60,9 @@ COPY --chown=myuser:myuser . ./
 # the binary in /root/.cache/ instead of /home/myuser/.cache/ where the runtime
 # user expects it. We run the fetch explicitly as myuser to ensure the binary is
 # in the correct location before the container starts.
+# PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD is unset to force actual download.
 USER myuser
-RUN npx camoufox-js fetch
+RUN PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD= npx camoufox-js fetch
 
 # Run the image.
 CMD ["node", "dist/main.js"]
