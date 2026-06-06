@@ -50,9 +50,6 @@ const crawler = new PlaywrightCrawler({
             headless: true,
             proxy: await proxyConfiguration?.newUrl(),
             geoip: true,
-            locale: "it-IT",
-            //env: { TZ: 'Europe/Rome' },
-            //humanize: true, // enable realistic mouse movement to reduce bot detection
             // fonts: ['Times New Roman'] // <- custom Camoufox options
         }),
     },

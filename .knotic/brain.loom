@@ -2,7 +2,7 @@
   "version": 3,
   "projectName": "actor_new",
   "createdAt": "2026-06-05T10:59:02.309Z",
-  "updatedAt": "2026-06-05T13:31:40.570Z",
+  "updatedAt": "2026-06-06T09:24:54.944Z",
   "lastHardenedAt": "2026-06-05T13:31:40.570Z",
   "messages": [
     {
@@ -67,6 +67,15 @@
       "ttlDays": 30,
       "updatedAt": "2026-06-05T13:31:40.570Z",
       "source": "hardening"
+    },
+    {
+      "key": "docker/camoufox_fetch",
+      "role": "system",
+      "content": "When using camoufox-js in Docker with Apify base image `apify/actor-node-playwright-camoufox`, the browser binary must be fetched explicitly as the runtime user (`myuser`), not as root. The `postinstall` hook runs as root during `npm install`, placing the binary in `/root/.cache/camoufox/`, but the runtime process looks in `/home/myuser/.cache/camoufox/`. Solution: after `npm install --omit=dev`, add `USER myuser` then `RUN npx camoufox-js fetch` before `CMD`.",
+      "category": "infrastructure",
+      "ttlDays": 365,
+      "updatedAt": "2026-06-06T09:24:54.944Z",
+      "source": "manual"
     }
   ]
 }

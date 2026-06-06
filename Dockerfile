@@ -55,5 +55,13 @@ COPY --from=builder --chown=myuser:myuser /home/myuser/dist ./dist
 # for most source file changes.
 COPY --chown=myuser:myuser . ./
 
+# Ensure Camoufox browser is downloaded for the runtime user.
+# The postinstall of camoufox-js runs as root during npm install, which places
+# the binary in /root/.cache/ instead of /home/myuser/.cache/ where the runtime
+# user expects it. We run the fetch explicitly as myuser to ensure the binary is
+# in the correct location before the container starts.
+USER myuser
+RUN npx camoufox-js fetch
+
 # Run the image.
 CMD ["node", "dist/main.js"]
