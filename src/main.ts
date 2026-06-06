@@ -75,8 +75,12 @@ console.log(`Using viewport ${viewport[0]}×${viewport[1]} and headless mode: ${
 
 const crawler = new PlaywrightCrawler({
     maxRequestsPerCrawl,
+    useSessionPool: true,
+    sessionPoolOptions: { maxPoolSize: 5 },
+    maxConcurrency: 1,
+    maxRequestRetries: 3,
     requestHandler: router,
-     preNavigationHooks: [
+    preNavigationHooks: [
         // Human-like behavior: random delay before navigation
         async ({ page }, _context) => {
             try {
