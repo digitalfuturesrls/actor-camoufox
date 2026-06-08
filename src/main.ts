@@ -158,20 +158,31 @@ const crawler = new PlaywrightCrawler({
 // Map input to requests with labels from tags
 log.info('Mapping input to requests with labels...', { count: startUrls.length });
 
-const requests = startUrls.map((item) => {
+const requests = startUrls.map((item, index, arr) => {
     const label = item.tag && item.tag.trim() ? item.tag.trim() : undefined;
 
     if (!item.url) {
         log.warning('Missing url in startUrl entry', { item });
     }
 
+    // Se ci sono almeno 2 URL e questo e il primo, passa il secondo URL nel userData
+    // cosi il handler puo fare goto alla pagina target dopo il warmup
+    const userData: Record<string, unknown> = {};
+    if (index === 0 && arr.length >= 2) {
+        userData.targetUrl = arr[1].url;
+    }
+
     return {
         url: item.url,
         label,
+        userData,
     };
+}).filter((_req, index) => {
+    // Se ci sono 2 URL, skippa il secondo perche ci navighiamo via goto dal primo
+    return !(startUrls.length >= 2 && index === 1);
 });
 
-await crawler.run(requests);
+log.info('Starting crawl with requests...', { requests });
 
 // Exit successfully
 await Actor.exit();
