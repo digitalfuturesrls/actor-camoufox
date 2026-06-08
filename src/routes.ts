@@ -49,22 +49,99 @@ router.addDefaultHandler(async ({ request, page, log, pushData }) => {
     // Attesa casuale per simulare lettura pagina
     await page.waitForTimeout(1500 + Math.random() * 2500);
 
-    // Scroll casuale sulla pagina target
-    await page.evaluate(async () => {
-        const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-        const totalHeight = document.body.scrollHeight;
-        const scrollTo = Math.min(totalHeight * 0.3, 800);
-        window.scrollTo({ top: scrollTo, behavior: 'smooth' });
-        await delay(500 + Math.random() * 1000);
-    });
+    // Progressive multi-step scroll to trigger lazy-loaded content
+    const scrollStep = 600;
+    const maxScrolls = 20;
+    let scrollCount = 0;
+    let lastHeight = await page.evaluate(() => document.body.scrollHeight);
+    let stalledCount = 0;
+    let finalScrollY = 0;
 
-    // Estrazione annunci con xpath
+    try {
+        for (let i = 0; i < maxScrolls; i++) {
+            await page.evaluate(
+                (step) => window.scrollBy(0, step),
+                scrollStep,
+            );
+            await page.waitForTimeout(500);
+
+            const { scrollY, scrollHeight, innerHeight } = await page.evaluate(() => ({
+                scrollY: window.scrollY,
+                scrollHeight: document.body.scrollHeight,
+                innerHeight: window.innerHeight,
+            }));
+
+            finalScrollY = scrollY;
+            scrollCount++;
+
+            // Break if bottom reached
+            if (scrollY + innerHeight >= scrollHeight) {
+                log.info(`Scroll ${scrollCount}: bottom reached at scrollY=${scrollY}`);
+                break;
+            }
+
+            // Break if content height hasn't increased for 3 consecutive scrolls
+            if (scrollHeight === lastHeight) {
+                stalledCount++;
+                if (stalledCount >= 3) {
+                    log.info(`Scroll ${scrollCount}: content stalled, breaking`);
+                    break;
+                }
+            } else {
+                stalledCount = 0;
+                lastHeight = scrollHeight;
+            }
+        }
+
+        log.info(`Scroll complete: ${scrollCount} scrolls, final scrollY=${finalScrollY}`);
+    } catch (err) {
+        log.warning(`Progressive scroll failed, falling back to single scroll: ${err}`);
+        try {
+            const fallback = await page.evaluate(() => document.body.scrollHeight);
+            const fallbackScroll = Math.min(fallback * 0.3, 800);
+            await page.evaluate((y) => window.scrollTo(0, y), fallbackScroll);
+            await page.waitForTimeout(1000);
+        } catch {
+            // ignore
+        }
+    }
+
+    // ─── DEBUG: page state ───────────────────────────────
+    console.log('\u{1F50D} Page URL:', request.url);
+    console.log('\u{1F4D0} Scroll position:', await page.evaluate(() => window.scrollY));
+    console.log('\u{1F4CF} Page height:', await page.evaluate(() => document.body.scrollHeight));
+
+    // Screenshot for visual inspection
+    try {
+        await page.screenshot({ path: 'screenshots/debug-fullpage.png', fullPage: true });
+        console.log('\u{1F4F7} Screenshot saved: screenshots/debug-fullpage.png');
+    } catch (err) {
+        console.warn('\u{26A0} Screenshot failed:', err);
+    }
+
+    // ─── DEBUG: link extraction ──────────────────────────
     log.info('Extracting announcements with xpath...');
-    const hrefs = await page.locator('xpath=//a[@href]').evaluateAll(
-        (els) => els.map((el) => (el as unknown as Attr).value),
+    const annunciLinks = await page.locator('xpath=//a[contains(@href, "annunci")]').evaluateAll(
+        (els) =>
+            els.map((el) => ({
+                href: el.getAttribute('href') ?? '',
+                text: el.textContent?.trim() ?? '',
+            })),
     );
 
-    log.info(`Found ${hrefs.length} links containing "annunci"`);
+    const annunciCount = annunciLinks.length;
+    console.log(`\u{1F50D} Annunci links found (href contains 'annunci'): ${annunciCount}`);
+    if (annunciCount > 0) {
+        console.log(`\u{1F4A1} First ${Math.min(10, annunciCount)} annunci links:`);
+        annunciLinks.slice(0, 10).forEach((l, i) =>
+            console.log(`  [${i + 1}] href=${l.href}  text=${l.text?.substring(0, 80).replace(/\s+/g, ' ')}`), // eslint-disable-line no-console
+        );
+    }
+
+    // Use hrefs (correct extraction) for dataset push
+    const hrefs = annunciLinks.map((l) => l.href);
+
+    log.info(`Found ${hrefs.length} links with href containing "annunci"`);
 
     await pushData({
         warmupUrl,

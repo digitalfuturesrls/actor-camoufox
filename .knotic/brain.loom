@@ -2,7 +2,7 @@
   "version": 3,
   "projectName": "actor_new",
   "createdAt": "2026-06-05T10:59:02.309Z",
-  "updatedAt": "2026-06-06T10:41:23.541Z",
+  "updatedAt": "2026-06-08T11:55:08.177Z",
   "lastHardenedAt": "2026-06-05T13:31:40.570Z",
   "messages": [
     {
@@ -137,6 +137,15 @@
       "ttlDays": 30,
       "updatedAt": "2026-06-06T10:41:17.516Z",
       "source": "context_agent"
+    },
+    {
+      "key": "step2-xpath-fix",
+      "role": "system",
+      "content": "## Step 2 Complete: Fix XPath to filter links containing 'annunci'\n\n### Changes Made\n- **File**: `src/routes.ts`\n- **Line 76**: Changed XPath from `//a[@href]` to `//a[contains(@href, \"annunci\")]`\n- **Line 96**: Updated log message from \"links containing\" to \"links with href containing\"\n- **Simplified code**: Removed the two-step filter (first get all links, then filter in JS) and now directly extracts only links with \"annunci\" in href via XPath\n- **Fixed null handling**: Added `?? ''` to `getAttribute('href')` result\n- **Improved text output**: Added whitespace normalization in log output",
+      "category": "code_fixes",
+      "ttlDays": 7,
+      "updatedAt": "2026-06-08T11:55:08.177Z",
+      "source": "manual"
     }
   ]
 }
