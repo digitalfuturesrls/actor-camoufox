@@ -32,6 +32,10 @@ router.addDefaultHandler(async ({ request, page, log, pushData }) => {
 
     log.info('Warmup completed');
 
+
+    const bodyHTMLWU = await page.evaluate(() => document.body.innerHTML);
+    console.log('\u{1F4C4} Body HTML (full) for warmupUrl:\n', bodyHTMLWU);
+
     // Se non c'e una seconda URL, termina qui
     if (!targetUrl) {
         log.info('No targetUrl provided, warmup only');
