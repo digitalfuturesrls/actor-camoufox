@@ -2,7 +2,7 @@
   "version": 3,
   "chatId": "1780916233057-e1yrv0z",
   "createdAt": "2026-06-08T10:57:13.062Z",
-  "updatedAt": "2026-06-08T11:07:04.748Z",
+  "updatedAt": "2026-06-08T11:19:26.326Z",
   "entries": [
     {
       "type": "user_message",
@@ -492,6 +492,246 @@
       "agent": "main",
       "content": " Fatto! Ho modificato entrambi i file per implementare il flusso che hai descritto:\n\n**`src/main.ts`**:\n- Cicla sull'array `startUrls`\n- Se ci sono 2 URL, passa il secondo nel `userData` della prima request (`userData.targetUrl`)\n- Filtra il secondo URL dall'array delle requests (ci navighiamo via `goto` dal primo handler)\n\n**`src/routes.ts`**:\n- Un solo `defaultHandler` che:\n  1. Fa **warmup** sulla prima pagina con scroll naturale (su/giù con delay random)\n  2. Se c'è `targetUrl` nel `userData`, naviga alla seconda pagina con `page.goto()`\n  3. Aspetta un po' e fa uno scroll casuale sulla pagina target\n  4. Estrae gli annunci con xpath: `//a[contains(@href, \"annunci\")]/@href`\n  5. Pusha i dati con `warmupUrl`, `targetUrl` e `announcementLinks`\n\nNessun errore TypeScript rilevato. Vuoi che faccia una prova di build o test?",
       "timestamp": "2026-06-08T11:07:04.748Z"
+    },
+    {
+      "type": "user_message",
+      "agent": "user",
+      "content": "mi da un esempioi del json da dare in input?",
+      "timestamp": "2026-06-08T11:08:57.842Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": " ",
+      "timestamp": "2026-06-08T11:09:00.573Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "[ALREADY IN CONTEXT] File: .actor/input_schema.json (51 lines, 1842 chars)\nDo not full-read this file again in the same conversation unless it was modified.\nIf needed, request only specific lines with file(action:\"read\", path:\".actor/input_schema.json\", startLine:X, endLine:Y) (total: 51 lines).",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 296,
+        "storedSize": 296,
+        "artifactId": "tool_result-2026-06-08T11-09-00-578Z-j616ix"
+      },
+      "timestamp": "2026-06-08T11:09:00.581Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": " ",
+      "timestamp": "2026-06-08T11:09:03.786Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "File: src/main.ts (lines 45-80 of 189) [hash:eb9f2833]\n45|\r\n46|interface Input {\r\n47|    startUrls: Array<{ url: string; tag?: string }>;\r\n48|    maxRequestsPerCrawl: number;\r\n49|}\r\n50|\r\n51|// Initialize the Apify SDK\r\n52|await Actor.init();\r\n53|\r\n54|// Structure of input is defined in input_schema.json\r\n55|const { startUrls = [{ url: 'https://apify.com' }], maxRequestsPerCrawl = 100 } =\r\n56|    (await Actor.getInput<Input>()) ?? ({} as Input);\r\n57|\r\n58|// `checkAccess` flag ensures the proxy credentials are valid, but the check can take a few hundred milliseconds.\r\n59|// Disable it for short runs if you are sure your proxy configuration is correct\r\n60|const proxyConfiguration = await Actor.createProxyConfiguration({\r\n61|    groups: ['RESIDENTIAL'],\r\n62|    countryCode: 'IT',\r\n63|    checkAccess: true\r\n64|});\r\n65|\r\n66|// Randomize viewport and use virtual headless mode for enhanced stealth\r\n67|const viewport = getRandomViewport();\r\n68|const useVirtualDisplay = process.env.HEADLESS_VIRTUAL !== 'false';\r\n69|console.log(`Using viewport ${viewport[0]}×${viewport[1]} and headless mode: ${useVirtualDisplay ? 'virtual' : 'standard'}`);\r\n70|\r\n71|const crawler = new PlaywrightCrawler({\r\n72|    maxRequestsPerCrawl,\r\n73|    useSessionPool: true,\r\n74|    sessionPoolOptions: { maxPoolSize: 5 },\r\n75|    maxConcurrency: 1,\r\n76|    maxRequestRetries: 3,\r\n77|    requestHandler: router,\r\n78|    preNavigationHooks: [\r\n79|        // Human-like behavior: random delay before navigation\r\n80|        async ({ page }, _context) => {\r",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 1533,
+        "storedSize": 1533,
+        "artifactId": "tool_result-2026-06-08T11-09-03-791Z-pw7v4j"
+      },
+      "timestamp": "2026-06-08T11:09:03.794Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": " Ecco l'esempio di JSON da dare in input, basato sulla struttura attuale:\n\n```json\n{\n    \"startUrls\": [\n        {\n            \"url\": \"https://www.sito-di-warmup.it\"\n        },\n        {\n            \"url\": \"https://www.sito-annunci.it/pagina-annunci\"\n        }\n    ],\n    \"maxRequestsPerCrawl\": 10\n}\n```\n\n**Come funziona:**\n1. Il primo URL (`sito-di-warmup.it`) viene usato per il **warmup** — navighiamo lì, facciamo scroll e delay per sembrare umani\n2. Il secondo URL (`sito-annunci.it`) viene passato nel `userData` del primo e raggiunto tramite `page.goto()` dall'handler\n3. Dalla pagina target estrae gli annunci con XPath: `//a[contains(@href, \"annunci\")]/@href`\n\n**Nota:** Se metti più di 2 URL, il primo viene usato per warmup e il secondo come target. Gli altri URL vengono ignorati dal filtro in `main.ts`. Se metti solo 1 URL, fa il warmup su quello senza estrazione annunci (perché non c'è target).",
+      "timestamp": "2026-06-08T11:09:07.489Z"
+    },
+    {
+      "type": "user_message",
+      "agent": "user",
+      "content": "mi hai detto che il targetUrl lo devo mettere come userData .. è tutto coerente?",
+      "timestamp": "2026-06-08T11:09:40.834Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": " Verifico la coerenza leggendo i file attuali. ",
+      "timestamp": "2026-06-08T11:09:42.937Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "File: src/main.ts (lines 155-178 of 189) [hash:eb9f2833]\n155|    },\r\n156|});\r\n157|\r\n158|// Map input to requests with labels from tags\r\n159|log.info('Mapping input to requests with labels...', { count: startUrls.length });\r\n160|\r\n161|const requests = startUrls.map((item, index, arr) => {\r\n162|    const label = item.tag && item.tag.trim() ? item.tag.trim() : undefined;\r\n163|\r\n164|    if (!item.url) {\r\n165|        log.warning('Missing url in startUrl entry', { item });\r\n166|    }\r\n167|\r\n168|    // Se ci sono almeno 2 URL e questo e il primo, passa il secondo URL nel userData\r\n169|    // cosi il handler puo fare goto alla pagina target dopo il warmup\r\n170|    const userData: Record<string, unknown> = {};\r\n171|    if (index === 0 && arr.length >= 2) {\r\n172|        userData.targetUrl = arr[1].url;\r\n173|    }\r\n174|\r\n175|    return {\r\n176|        url: item.url,\r\n177|        label,\r\n178|        userData,\r",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 910,
+        "storedSize": 910,
+        "artifactId": "tool_result-2026-06-08T11-09-42-946Z-zsbsj3"
+      },
+      "timestamp": "2026-06-08T11:09:42.949Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "File: src/routes.ts (76 lines) [hash:496c2e72]\n1|import { createPlaywrightRouter } from '@crawlee/playwright';\n2|\n3|export const router = createPlaywrightRouter();\n4|\n5|router.addDefaultHandler(async ({ request, page, log, pushData }) => {\n6|    const warmupUrl = request.url;\n7|    const targetUrl = request.userData?.targetUrl as string | undefined;\n8|\n9|    log.info(`Warmup on first URL: ${warmupUrl}`);\n10|\n11|    // Warmup: scroll naturale e comportamento umano sulla pagina corrente\n12|    await page.evaluate(async () => {\n13|        const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));\n14|        const totalHeight = document.body.scrollHeight;\n15|        const step = totalHeight / 8;\n16|\n17|        // Scendi lentamente\n18|        for (let i = 1; i <= 8; i++) {\n19|            window.scrollTo({ top: i * step, behavior: 'smooth' });\n20|            await delay(400 + Math.random() * 600);\n21|        }\n22|\n23|        // Pausa di lettura\n24|        await delay(1000 + Math.random() * 2000);\n25|\n26|        // Risali\n27|        for (let i = 7; i >= 0; i--) {\n28|            window.scrollTo({ top: i * step, behavior: 'smooth' });\n29|            await delay(300 + Math.random() * 400);\n30|        }\n31|    });\n32|\n33|    log.info('Warmup completed');\n34|\n35|    // Se non c'e una seconda URL, termina qui\n36|    if (!targetUrl) {\n37|        log.info('No targetUrl provided, warmup only');\n38|        await pushData({\n39|            sourceUrl: warmupUrl,\n40|            timestamp: new Date().toISOString(),\n41|        });\n42|        return;\n43|    }\n44|\n45|    // Naviga alla seconda pagina con goto\n46|    log.info(`Navigating to target URL: ${targetUrl}`);\n47|    await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });\n48|\n49|    // Attesa casuale per simulare lettura pagina\n50|    await page.waitForTimeout(1500 + Math.random() * 2500);\n51|\n52|    // Scroll casuale sulla pagina target\n53|    await page.evaluate(async () => {\n54|        const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));\n55|        const totalHeight = document.body.scrollHeight;\n56|        const scrollTo = Math.min(totalHeight * 0.3, 800);\n57|        window.scrollTo({ top: scrollTo, behavior: 'smooth' });\n58|        await delay(500 + Math.random() * 1000);\n59|    });\n60|\n61|    // Estrazione annunci con xpath\n62|    log.info('Extracting announcements with xpath...');\n63|    const hrefs = await page.locator('xpath=//a[contains(@href, \"annunci\")]/@href').evaluateAll(\n64|        (els) => els.map((el) => (el as unknown as Attr).value),\n65|    );\n66|\n67|    log.info(`Found ${hrefs.length} links containing \"annunci\"`);\n68|\n69|    await pushData({\n70|        warmupUrl,\n71|        targetUrl,\n72|        announcementLinks: hrefs,\n73|        extractedAt: new Date().toISOString(),\n74|    });\n75|});\n76|",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 2825,
+        "storedSize": 2825,
+        "artifactId": "tool_result-2026-06-08T11-09-42-954Z-2vsot3"
+      },
+      "timestamp": "2026-06-08T11:09:42.958Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": " Sì, **è tutto coerente** e funziona in automatico. L'utente **non deve** mettere `targetUrl` a mano nel JSON — lo gestisce `main.ts`.\n\n**Come funziona:**\n\nIn `main.ts` (righe 168-173):\n```ts\n// Se ci sono almeno 2 URL e questo è il primo, passa il secondo URL nel userData\nconst userData: Record<string, unknown> = {};\nif (index === 0 && arr.length >= 2) {\n    userData.targetUrl = arr[1].url;\n}\n```\n\nIn `routes.ts` (riga 7):\n```ts\nconst targetUrl = request.userData?.targetUrl as string | undefined;\n```\n\nQuindi tu nel JSON **metti solo i due URL** e il codice fa tutto da sé:\n\n```json\n{\n    \"startUrls\": [\n        { \"url\": \"https://www.sito-di-warmup.it\" },\n        { \"url\": \"https://www.sito-annunci.it/pagina-annunci\" }\n    ],\n    \"maxRequestsPerCrawl\": 10\n}\n```\n\n- `main.ts` crea la request per il primo URL\n- Nella `userData` di quella request mette automaticamente il secondo URL come `targetUrl`\n- `routes.ts` riceve la request, fa warmup sul primo URL, poi legge `request.userData.targetUrl` e ci naviga con `page.goto()`\n\nNon devi fare nulla a mano sul `userData`. Tutto coerente. 👍",
+      "timestamp": "2026-06-08T11:09:46.552Z"
+    },
+    {
+      "type": "user_message",
+      "agent": "user",
+      "content": "questo va bene ? [\n    {\n        \"url\": \"https://www.immobiliare.it/\"\n    },\n    {\n        \"url\": \"https://www.immobiliare.it/vendita-case/bologna/bolognina/\",\n        \"tag\": \"list\"\n    }\n]",
+      "timestamp": "2026-06-08T11:17:37.874Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": " Verifico la struttura attuale dell'input schema e del codice in `main.ts` per confermarti. ",
+      "timestamp": "2026-06-08T11:17:42.975Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "File: src/main.ts (lines 155-178 of 189) [hash:eb9f2833]\n155|    },\r\n156|});\r\n157|\r\n158|// Map input to requests with labels from tags\r\n159|log.info('Mapping input to requests with labels...', { count: startUrls.length });\r\n160|\r\n161|const requests = startUrls.map((item, index, arr) => {\r\n162|    const label = item.tag && item.tag.trim() ? item.tag.trim() : undefined;\r\n163|\r\n164|    if (!item.url) {\r\n165|        log.warning('Missing url in startUrl entry', { item });\r\n166|    }\r\n167|\r\n168|    // Se ci sono almeno 2 URL e questo e il primo, passa il secondo URL nel userData\r\n169|    // cosi il handler puo fare goto alla pagina target dopo il warmup\r\n170|    const userData: Record<string, unknown> = {};\r\n171|    if (index === 0 && arr.length >= 2) {\r\n172|        userData.targetUrl = arr[1].url;\r\n173|    }\r\n174|\r\n175|    return {\r\n176|        url: item.url,\r\n177|        label,\r\n178|        userData,\r",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 910,
+        "storedSize": 910,
+        "artifactId": "tool_result-2026-06-08T11-17-42-979Z-sn1ehb"
+      },
+      "timestamp": "2026-06-08T11:17:42.982Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "[ALREADY IN CONTEXT] File: .actor/input_schema.json (51 lines, 1842 chars)\nDo not full-read this file again in the same conversation unless it was modified.\nIf needed, request only specific lines with file(action:\"read\", path:\".actor/input_schema.json\", startLine:X, endLine:Y) (total: 51 lines).",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 296,
+        "storedSize": 296,
+        "artifactId": "tool_result-2026-06-08T11-17-42-985Z-7w2f2l"
+      },
+      "timestamp": "2026-06-08T11:17:42.988Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": " Sì, **la struttura dei due URL è corretta**, ma con una notazione importante: nell'input dell'Actor va wrappato dentro `startUrls`, quindi:\n\n```json\n{\n    \"startUrls\": [\n        {\n            \"url\": \"https://www.immobiliare.it/\"\n        },\n        {\n            \"url\": \"https://www.immobiliare.it/vendita-case/bologna/bolognina/\",\n            \"tag\": \"list\"\n        }\n    ]\n}\n```\n\n**Attenzione al `tag`**: nel codice attuale, il `\"tag\": \"list\"` finisce sulla **seconda** request (quella che punta direttamente a `/vendita-case/bologna/bolognina/`), non sulla prima di warmup. Se vuoi che la label `\"list\"` sia sulla richiesta di warmup, spostala sul primo elemento:\n\n```json\n{\n    \"startUrls\": [\n        {\n            \"url\": \"https://www.immobiliare.it/\",\n            \"tag\": \"list\"\n        },\n        {\n            \"url\": \"https://www.immobiliare.it/vendita-case/bologna/bolognina/\"\n        }\n    ]\n}\n```\n\n**Nota sul flusso**: al momento il crawler processerà **entrambi** gli URL come richieste separate:\n1. Request su `immobiliare.it/` → warmup + goto a bolognina + estrazione\n2. Request su `immobiliare.it/vendita-case/bologna/bolognina/` → navigazione diretta\n\nVuoi che filtri il secondo URL per evitare la navigazione doppia?",
+      "timestamp": "2026-06-08T11:17:55.141Z"
+    },
+    {
+      "type": "user_message",
+      "agent": "user",
+      "content": "ma la route quando la lanci? sembra non faccia niente",
+      "timestamp": "2026-06-08T11:19:04.338Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": " Capisco il problema. Verifico subito il codice attuale di `main.ts` e `routes.ts` per capire perché la route non viene eseguita. ",
+      "timestamp": "2026-06-08T11:19:14.266Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "File: src/main.ts (189 lines) [hash:eb9f2833]\n1|/**\r\n2| * This template is a production ready boilerplate for developing with `PlaywrightCrawler`.\r\n3| * Use this to bootstrap your projects using the most up-to-date code.\r\n4| * If you're looking for examples or want to learn more, see README.\r\n5| */\r\n6|\r\n7|// For more information, see https://crawlee.dev\r\n8|import { PlaywrightCrawler } from '@crawlee/playwright';\r\n9|// For more information, see https://docs.apify.com/sdk/js\r\n10|import { Actor, log } from 'apify';\r\n11|import { launchOptions as camoufoxLaunchOptions } from 'camoufox-js';\r\n12|import { firefox } from 'playwright';\r\n13|\r\n14|// this is ESM project, and as such, it requires you to specify extensions in your relative imports\r\n15|// read more about this here: https://nodejs.org/docs/latest-v18.x/api/esm.html#mandatory-file-extensions\r\n16|// note that we need to use `.js` even when inside TS files\r\n17|import { router } from './routes.js';\r\n18|\r\n19|// Common desktop viewport sizes for fingerprint randomization\r\n20|const COMMON_VIEWPORTS: [number, number][] = [\r\n21|    [1920, 1080],\r\n22|    [1366, 768],\r\n23|    [1440, 900],\r\n24|    [1536, 864],\r\n25|    [1280, 720],\r\n26|];\r\n27|\r\n28|function getRandomViewport(): [number, number] {\r\n29|    return COMMON_VIEWPORTS[Math.floor(Math.random() * COMMON_VIEWPORTS.length)];\r\n30|}\r\n31|\r\n32|// Tracker and analytics domains to block\r\n33|const BLOCKED_PATTERNS = [\r\n34|    /doubleclick\\.net/,\r\n35|    /google-analytics\\.com/,\r\n36|    /googletagmanager\\.com/,\r\n37|    /facebook\\.net/,\r\n38|    /amazon-adsystem\\.com/,\r\n39|    /scorecardresearch\\.com/,\r\n40|    /hotjar\\.com/,\r\n41|    /mouseflow\\.com/,\r\n42|    /newrelic\\.com/,\r\n43|];\r\n44|\r\n45|\r\n46|interface Input {\r\n47|    startUrls: Array<{ url: string; tag?: string }>;\r\n48|    maxRequestsPerCrawl: number;\r\n49|}\r\n50|\r\n51|// Initialize the Apify SDK\r\n52|await Actor.init();\r\n53|\r\n54|// Structure of input is defined in input_schema.json\r\n55|const { startUrls = [{ url: 'https://apify.com' }], maxRequestsPerCrawl = 100 } =\r\n56|    (await Actor.getInput<Input>()) ?? ({} as Input);\r\n57|\r\n58|// `checkAccess` flag ensures the proxy credentials are valid, but the check can take a few hundred milliseconds.\r\n59|// Disable it for short runs if you are sure your proxy configuration is correct\r\n60|const proxyConfiguration = await Actor.createProxyConfiguration({\r\n61|    groups: ['RESIDENTIAL'],\r\n62|    countryCode: 'IT',\r\n63|    checkAccess: true\r\n64|});\r\n65|\r\n66|// Randomize viewport and use virtual headless mode for enhanced stealth\r\n67|const viewport = getRandomViewport();\r\n68|const useVirtualDisplay = process.env.HEADLESS_VIRTUAL !== 'false';\r\n69|console.log(`Using viewport ${viewport[0]}×${viewport[1]} and headless mode: ${useVirtualDisplay ? 'virtual' : 'standard'}`);\r\n70|\r\n71|const crawler = new PlaywrightCrawler({\r\n72|    maxRequestsPerCrawl,\r\n73|    useSessionPool: true,\r\n74|    sessionPoolOptions: { maxPoolSize: 5 },\r\n75|    maxConcurrency: 1,\r\n76|    maxRequestRetries: 3,\r\n77|    requestHandler: router,\r\n78|    preNavigationHooks: [\r\n79|        // Human-like behavior: random delay before navigation\r\n80|        async ({ page }, _context) => {\r\n81|            try {\r\n82|                // Random delay 1-4 seconds to simulate human hesitation\r\n83|                await page.waitForTimeout(1000 + Math.random() * 3000);\r\n84|            } catch (err) {\r\n85|                log.warning('Pre-navigation delay interrupted', { error: String(err) });\r\n86|            }\r\n87|\r\n88|            // Simulate cookie consent acceptance\r\n89|            try {\r\n90|                await page.evaluate(() => {\r\n91|                    document.cookie = 'cookie_consent=true; path=/; max-age=3600';\r\n92|                });\r\n93|            } catch (err) {\r\n94|                log.warning('Cookie consent simulation failed', { error: String(err) });\r\n95|            }\r\n96|        },\r\n97|        // Block trackers and analytics domains\r\n98|        async ({ page }) => {\r\n99|            await page.route('**/*', async (route) => {\r\n100|                const url = route.request().url();\r\n101|                const shouldBlock = BLOCKED_PATTERNS.some((pattern) => pattern.test(url));\r\n102|                if (shouldBlock) {\r\n103|                    await route.abort('blockedbyclient');\r\n104|                } else {\r\n105|                    await route.continue();\r\n106|                }\r\n107|            });\r\n108|        },\r\n109|    ],\r\n110|    postNavigationHooks: [\r\n111|        // Human-like behavior: simulate reading after page load\r\n112|        async ({ page }) => {\r\n113|            try {\r\n114|                // Progressive scroll: 10 steps with 300ms intervals\r\n115|                await page.evaluate(async () => {\r\n116|                    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));\r\n117|                    const totalHeight = document.body.scrollHeight;\r\n118|                    const step = totalHeight / 10;\r\n119|                    for (let i = 1; i <= 10; i++) {\r\n120|                        window.scrollTo(0, i * step);\r\n121|                        await delay(300);\r\n122|                    }\r\n123|                });\r\n124|\r\n125|                // Mouse emulation: move mouse to random positions\r\n126|                const viewport = page.viewportSize() || { width: 1280, height: 720 };\r\n127|                for (let i = 0; i < 3; i++) {\r\n128|                    await page.mouse.move(\r\n129|                        Math.random() * viewport.width,\r\n130|                        Math.random() * viewport.height\r\n131|                    );\r\n132|                    await page.waitForTimeout(500);\r\n133|                }\r\n134|\r\n135|                // Reading wait: simulate reading time (2-5 seconds)\r\n136|                await page.waitForTimeout(2000 + Math.random() * 3000);\r\n137|            } catch (err) {\r\n138|                log.warning('Post-navigation hooks interrupted', { error: String(err) });\r\n139|            }\r\n140|        },\r\n141|    ],\r\n142|\r\n143|    launchContext: {\r\n144|        launcher: firefox,\r\n145|        launchOptions: await camoufoxLaunchOptions({\r\n146|            headless: true,\r\n147|            window: viewport,\r\n148|            proxy: await proxyConfiguration?.newUrl(),\r\n149|            geoip: true,\r\n150|            locale: \"it-IT\",\r\n151|            env: { TZ: 'Europe/Rome' },\r\n152|            humanize: true, // enable realistic mouse movement to reduce bot detection\r\n153|            // fonts: ['Times New Roman'] // <- custom Camoufox options\r\n154|        }),\r\n155|    },\r\n156|});\r\n157|\r\n158|// Map input to requests with labels from tags\r\n159|log.info('Mapping input to requests with labels...', { count: startUrls.length });\r\n160|\r\n161|const requests = startUrls.map((item, index, arr) => {\r\n162|    const label = item.tag && item.tag.trim() ? item.tag.trim() : undefined;\r\n163|\r\n164|    if (!item.url) {\r\n165|        log.warning('Missing url in startUrl entry', { item });\r\n166|    }\r\n167|\r\n168|    // Se ci sono almeno 2 URL e questo e il primo, passa il secondo URL nel userData\r\n169|    // cosi il handler puo fare goto alla pagina target dopo il warmup\r\n170|    const userData: Record<string, unknown> = {};\r\n171|    if (index === 0 && arr.length >= 2) {\r\n172|        userData.targetUrl = arr[1].url;\r\n173|    }\r\n174|\r\n175|    return {\r\n176|        url: item.url,\r\n177|        label,\r\n178|        userData,\r\n179|    };\r\n180|}).filter((_req, index) => {\r\n181|    // Se ci sono 2 URL, skippa il secondo perche ci navighiamo via goto dal primo\r\n182|    return !(startUrls.length >= 2 && index === 1);\r\n183|});\r\n184|\r\n185|log.info('Starting crawl with requests...', { requests });\r\n186|\r\n187|// Exit successfully\r\n188|await Actor.exit();\r\n189|",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 7733,
+        "storedSize": 7733,
+        "artifactId": "tool_result-2026-06-08T11-19-14-275Z-qnatbr"
+      },
+      "timestamp": "2026-06-08T11:19:14.277Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "[ALREADY IN CONTEXT] File: src/routes.ts (76 lines, 2559 chars)\nDo not full-read this file again in the same conversation unless it was modified.\nIf needed, request only specific lines with file(action:\"read\", path:\"src/routes.ts\", startLine:X, endLine:Y) (total: 76 lines).",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 274,
+        "storedSize": 274,
+        "artifactId": "tool_result-2026-06-08T11-19-14-280Z-npsaln"
+      },
+      "timestamp": "2026-06-08T11:19:14.284Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": " Trovato il bug! In `main.ts` manca `await crawler.run(requests);` — il crawler viene creato ma **non viene mai avviato**, quindi esce subito con `Actor.exit()`.\n\nProcedo con:\n1. Aggiungere `await crawler.run(requests);` prima di `Actor.exit()` ",
+      "timestamp": "2026-06-08T11:19:20.138Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "Replaced 1 occurrence in src/main.ts.\nReplaced content in src/main.ts.",
+      "metadata": {
+        "toolName": "edit_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 70,
+        "storedSize": 70,
+        "artifactId": "tool_result-2026-06-08T11-19-20-713Z-re7u0c"
+      },
+      "timestamp": "2026-06-08T11:19:20.717Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": "  Verifico che non ci siano errori dopo la correzione: ",
+      "timestamp": "2026-06-08T11:19:22.716Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "No diagnostics found for src/main.ts.",
+      "metadata": {
+        "toolName": "get_diagnostics",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 37,
+        "storedSize": 37,
+        "artifactId": "tool_result-2026-06-08T11-19-22-724Z-f5sfjn"
+      },
+      "timestamp": "2026-06-08T11:19:22.728Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": "  **Trovato il bug!** In `main.ts` mancava `await crawler.run(requests);` — il crawler veniva creato ma **non veniva mai avviato**, quindi lo script usciva subito con `Actor.exit()` senza processare nulla.\n\nHo aggiunto la chiamata mancante:\n\n```ts\nlog.info('Starting crawl with requests...', { requests });\n\nawait crawler.run(requests);  // <-- questo mancava!\n\nawait Actor.exit();\n```\n\nOra il flusso è corretto:\n1. Crea il crawler con `requestHandler: router`\n2. Mappa gli input in requests (con `targetUrl` nel `userData` del primo)\n3. **Avvia il crawler** con `await crawler.run(requests)`\n4. Il router processa il primo URL (warmup + goto al secondo + estrazione)\n5. Infine esce con `Actor.exit()`\n\nNessun errore TypeScript. Ora dovrebbe funzionare. Vuoi fare un test run?",
+      "timestamp": "2026-06-08T11:19:26.326Z"
     }
   ]
 }

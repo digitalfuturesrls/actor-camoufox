@@ -184,5 +184,7 @@ const requests = startUrls.map((item, index, arr) => {
 
 log.info('Starting crawl with requests...', { requests });
 
+await crawler.run(requests);
+
 // Exit successfully
 await Actor.exit();
