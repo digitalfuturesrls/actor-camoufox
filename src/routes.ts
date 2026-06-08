@@ -2,12 +2,14 @@ import { createPlaywrightRouter } from '@crawlee/playwright';
 
 export const router = createPlaywrightRouter();
 
-router.addDefaultHandler(async ({ enqueueLinks, log }) => {
-    log.info(`enqueueing new URLs`);
-    await enqueueLinks({
+router.addDefaultHandler(async ({ log }) => {
+    log.info(`Deafult page navigation... warmup`);
+   
+    /*await enqueueLinks({
         globs: ['https://apify.com/*'],
         label: 'detail',
-    });
+    });*/
+
 });
 
 router.addHandler('detail', async ({ request, page, log, pushData }) => {
