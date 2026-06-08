@@ -139,7 +139,7 @@ const crawler = new PlaywrightCrawler({
             }
         },
     ],
-
+    proxyConfiguration,
     launchContext: {
         launcher: firefox,
         launchOptions: await camoufoxLaunchOptions({
