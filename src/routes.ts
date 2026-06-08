@@ -19,3 +19,25 @@ router.addHandler('detail', async ({ request, page, log, pushData }) => {
         title,
     });
 });
+
+router.addHandler('list', async ({ request, page, log, pushData }) => {
+    log.info(`Extracting list items from ${request.loadedUrl}`);
+
+    const items = await page.evaluate(() => {
+        const listElements = document.querySelectorAll('li');
+        return Array.from(listElements).map((li) => {
+            const link = li.querySelector('a');
+            return {
+                text: li.textContent?.trim() || '',
+                url: link ? link.href : undefined,
+            };
+        }).filter((item) => item.text.length > 0);
+    });
+
+    log.info(`Found ${items.length} list items`);
+
+    await pushData({
+        url: request.loadedUrl,
+        listItems: items,
+    });
+});

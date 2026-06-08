@@ -5,15 +5,41 @@
     "schemaVersion": 1,
     "properties": {
         "startUrls": {
-            "title": "Start URLs",
+            "title": "URLs to process",
             "type": "array",
-            "description": "URLs to start with.",
-            "editor": "requestListSources",
+            "description": "List of objects with a required URL and an optional tag (e.g. 'detail', 'list'). If no tag is provided, the default handler will be used.",
+            "editor": "json",
             "prefill": [
                 {
-                    "url": "https://apify.com"
+                    "url": "https://apify.com",
+                    "tag": "detail"
+                },
+                {
+                    "url": "https://apify.com/store",
+                    "tag": "list"
                 }
-            ]
+            ],
+            "items": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "title": "URL",
+                        "type": "string",
+                        "description": "The URL of the page to scrape",
+                        "editor": "textfield",
+                        "prefill": "https://"
+                    },
+                    "tag": {
+                        "title": "Tag (optional)",
+                        "type": "string",
+                        "description": "Route label: 'detail', 'list', or empty/omitted for default",
+                        "editor": "textfield"
+                    }
+                },
+                "required": [
+                    "url"
+                ]
+            }
         },
         "maxRequestsPerCrawl": {
             "title": "Max Requests per Crawl",

@@ -44,12 +44,7 @@ const BLOCKED_PATTERNS = [
 
 
 interface Input {
-    startUrls: {
-        url: string;
-        method?: 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'TRACE' | 'OPTIONS' | 'CONNECT' | 'PATCH';
-        headers?: Record<string, string>;
-        userData: Record<string, unknown>;
-    }[];
+    startUrls: Array<{ url: string; tag?: string }>;
     maxRequestsPerCrawl: number;
 }
 
@@ -57,7 +52,7 @@ interface Input {
 await Actor.init();
 
 // Structure of input is defined in input_schema.json
-const { startUrls = ['https://apify.com'], maxRequestsPerCrawl = 100 } =
+const { startUrls = [{ url: 'https://apify.com' }], maxRequestsPerCrawl = 100 } =
     (await Actor.getInput<Input>()) ?? ({} as Input);
 
 // `checkAccess` flag ensures the proxy credentials are valid, but the check can take a few hundred milliseconds.
@@ -160,7 +155,23 @@ const crawler = new PlaywrightCrawler({
     },
 });
 
-await crawler.run(startUrls);
+// Map input to requests with labels from tags
+log.info('Mapping input to requests with labels...', { count: startUrls.length });
+
+const requests = startUrls.map((item) => {
+    const label = item.tag && item.tag.trim() ? item.tag.trim() : undefined;
+
+    if (!item.url) {
+        log.warning('Missing url in startUrl entry', { item });
+    }
+
+    return {
+        url: item.url,
+        label,
+    };
+});
+
+await crawler.run(requests);
 
 // Exit successfully
 await Actor.exit();

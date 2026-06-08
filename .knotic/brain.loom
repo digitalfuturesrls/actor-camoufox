@@ -2,7 +2,7 @@
   "version": 3,
   "projectName": "actor_new",
   "createdAt": "2026-06-05T10:59:02.309Z",
-  "updatedAt": "2026-06-06T09:38:24.901Z",
+  "updatedAt": "2026-06-06T10:41:23.541Z",
   "lastHardenedAt": "2026-06-05T13:31:40.570Z",
   "messages": [
     {
@@ -12,7 +12,8 @@
       "category": "project_context",
       "ttlDays": 30,
       "updatedAt": "2026-06-05T13:31:40.569Z",
-      "source": "hardening"
+      "source": "hardening",
+      "hidden": true
     },
     {
       "key": "project_structure/source_layout",
@@ -21,7 +22,8 @@
       "category": "project_structure",
       "ttlDays": 30,
       "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
+      "source": "hardening",
+      "hidden": true
     },
     {
       "key": "code_rules/typescript_strictness",
@@ -30,7 +32,8 @@
       "category": "code_rules",
       "ttlDays": 14,
       "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
+      "source": "hardening",
+      "hidden": true
     },
     {
       "key": "infrastructure/docker_environment",
@@ -39,7 +42,8 @@
       "category": "infrastructure",
       "ttlDays": 30,
       "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
+      "source": "hardening",
+      "hidden": true
     },
     {
       "key": "file_map/src_stealth.ts",
@@ -48,7 +52,8 @@
       "category": "file_map",
       "ttlDays": 30,
       "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
+      "source": "hardening",
+      "hidden": true
     },
     {
       "key": "flow_logic/stealth_rotation_and_human_simulation",
@@ -57,7 +62,8 @@
       "category": "flow_logic",
       "ttlDays": 21,
       "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
+      "source": "hardening",
+      "hidden": true
     },
     {
       "key": "dependencies/key_packages",
@@ -66,7 +72,8 @@
       "category": "dependencies",
       "ttlDays": 30,
       "updatedAt": "2026-06-05T13:31:40.570Z",
-      "source": "hardening"
+      "source": "hardening",
+      "hidden": true
     },
     {
       "key": "docker/camoufox_fetch",
@@ -76,6 +83,60 @@
       "ttlDays": 365,
       "updatedAt": "2026-06-06T09:38:24.901Z",
       "source": "manual"
+    },
+    {
+      "key": "dependencies/application_stack",
+      "role": "system",
+      "content": "Runtime: Node >=20, ESM modules (type:module). Apify SDK ^3.7.0, @crawlee/playwright ^3.15.3, camoufox-js ^0.9.0 (stealth browser), playwright 1.60.0. Dev: TypeScript ^6.0.0, tsx ^4.20.3 (dev runner), vitest ^4.1.0 (test runner), eslint ^9 + @apify/eslint-config/ts, prettier ^3.5.3. No build step for local dev (tsx runs TS directly). Build: tsc to dist/ for production. CI: GitHub Actions, Node 24, Playwright chromium install.",
+      "category": "dependencies",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-06T10:41:17.516Z",
+      "source": "context_agent"
+    },
+    {
+      "key": "project_structure/file_map",
+      "role": "system",
+      "content": "src/main.ts — entry point: reads INPUT, creates PlaywrightCrawler with camoufox launchOptions, uses router as requestHandler, handles aborting event. src/routes.ts — createPlaywrightRouter with default handler extracting url+title, pushed to dataset. test/main.test.ts — Vitest integration test: crawls https://apify.com, asserts requestsFinished>=10 and items have url+title. .actor/ — Apify config: actor.json (name, version, input/output refs), input_schema.json (startUrls[], maxRequestsPerCrawl), output_schema.json, dataset_schema.json (table view: title, url). Dockerfile — two-stage build: builder+final, camoufox fetch as myuser. Config files: tsconfig.json, eslint.config.mjs, .prettierrc, .editorconfig.",
+      "category": "file_map",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-06T10:41:17.516Z",
+      "source": "context_agent"
+    },
+    {
+      "key": "code_rules/conventions",
+      "role": "system",
+      "content": "TypeScript strict mode with @apify/tsconfig. No `any` — use unknown or interfaces. ESM imports must use .js extension (e.g., ./routes.js). 4-space indentation, single quotes, printWidth 120 (Prettier enforced). Use apify/log for logging (not console.log). Input validated early via Actor.getInput(). Data pushed via Actor.pushData(). Graceful abort: Actor.on('aborting') with await Actor.exit(). Follow router pattern (createPlaywrightRouter). Prefer semicolons, LF line endings, trailing newline (Editorconfig). Lint: eslint; format: prettier —write.",
+      "category": "code_rules",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-06T10:41:17.516Z",
+      "source": "context_agent"
+    },
+    {
+      "key": "infrastructure/docker_and_ci",
+      "role": "system",
+      "content": "Docker: apify/actor-node-playwright-camoufox:24-1.60.0 (Node 20, Playwright 1.60.0, Camoufox Chromium pre-installed). Two-stage build: builder stage runs npm install --include=dev + tsc build; final stage runs npm install --omit=dev, copies dist/ from builder. Camoufox binary must be fetched as myuser (not root) after npm install to avoid path mismatch (/home/myuser/.cache/camoufox/). Local dev: tsx src/main.ts (no build needed). CI: GitHub Actions ubuntu-latest, Node 24, npm ci, npx playwright install --with-deps chromium, npm run build, npm test.",
+      "category": "infrastructure",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-06T10:41:17.516Z",
+      "source": "context_agent"
+    },
+    {
+      "key": "flow_logic/crawl_orchestration",
+      "role": "system",
+      "content": "1. Actor.getInput() reads startUrls[] and maxRequestsPerCrawl (default 100). 2. PlaywrightCrawler created with Camoufox browser (camoufox-js), launchOptions from @crawlee/playwright, and requestHandler=router. 3. Router matches request.label to handler: default handler extracts url and title from page. 4. Data pushed to dataset via Actor.pushData({url, title}). 5. Abort handling: Actor.on('aborting') -> await setTimeout(1000) -> await Actor.exit(). 6. View output: table with title (text) and url (link). Entry point agents start at src/main.ts for orchestration changes, src/routes.ts for scraping logic changes.",
+      "category": "flow_logic",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-06T10:41:17.516Z",
+      "source": "context_agent"
+    },
+    {
+      "key": "project_context/actor_overview",
+      "role": "system",
+      "content": "Apify Actor (template ts-crawlee-playwright-camoufox) for web scraping with anti-detection via Camoufox browser. Apify SDK + Crawlee + Playwright + Camoufox-js stack. ESM TypeScript, Vitest tests. Actor name: my-actor. Runs via Docker on Apify platform or locally with tsx. Uses router pattern, structured JSON output to dataset.",
+      "category": "project_context",
+      "ttlDays": 30,
+      "updatedAt": "2026-06-06T10:41:17.516Z",
+      "source": "context_agent"
     }
   ]
 }
