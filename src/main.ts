@@ -110,6 +110,14 @@ const crawler = new PlaywrightCrawler({
             }
         },
 
+        // Set realistic HTTP headers for Italian context
+        async ({ page }) => {
+            await page.setExtraHTTPHeaders({
+                'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            });
+        },
+
     ],
     postNavigationHooks: [
         // Human-like behavior: simulate reading after page load
