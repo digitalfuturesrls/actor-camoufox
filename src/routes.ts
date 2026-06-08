@@ -21,23 +21,16 @@ router.addHandler('detail', async ({ request, page, log, pushData }) => {
 });
 
 router.addHandler('list', async ({ request, page, log, pushData }) => {
-    log.info(`Extracting list items from ${request.loadedUrl}`);
+    log.info(`Extracting announcement links from ${request.loadedUrl}`);
 
-    const items = await page.evaluate(() => {
-        const listElements = document.querySelectorAll('li');
-        return Array.from(listElements).map((li) => {
-            const link = li.querySelector('a');
-            return {
-                text: li.textContent?.trim() || '',
-                url: link ? link.href : undefined,
-            };
-        }).filter((item) => item.text.length > 0);
-    });
+    const hrefs = await page.locator('xpath=//a[contains(@href, "annunci")]/@href').evaluateAll(
+        (els) => els.map((el) => (el as unknown as Attr).value)
+    );
 
-    log.info(`Found ${items.length} list items`);
+    log.info(`Found ${hrefs.length} links containing "annunci"`);
 
     await pushData({
         url: request.loadedUrl,
-        listItems: items,
+        announcementLinks: hrefs,
     });
 });
