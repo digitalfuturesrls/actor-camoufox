@@ -40,6 +40,9 @@ const BLOCKED_PATTERNS = [
     /hotjar\.com/,
     /mouseflow\.com/,
     /newrelic\.com/,
+    /datadome\.co/,
+    /adnxs\.com/,
+    /accounts\.google\.com\/gsi/,
 ];
 
 
@@ -76,6 +79,18 @@ const crawler = new PlaywrightCrawler({
     maxRequestRetries: 3,
     requestHandler: router,
     preNavigationHooks: [
+        // Block tracker and anti-bot domains before navigation
+        async ({ page }, _context) => {
+            await page.route('**/*', (route) => {
+                const url = route.request().url();
+                const shouldBlock = BLOCKED_PATTERNS.some((p) => p.test(url));
+                if (shouldBlock) {
+                    return route.abort('blockedbyclient');
+                }
+                return route.continue();
+            });
+        },
+
         // Human-like behavior: random delay before navigation
         async ({ page }, _context) => {
             try {
