@@ -60,7 +60,7 @@ router.addDefaultHandler(async ({ request, page, log, pushData }) => {
 
     // Estrazione annunci con xpath
     log.info('Extracting announcements with xpath...');
-    const hrefs = await page.locator('xpath=//a[contains(@href, "annunci")]/@href').evaluateAll(
+    const hrefs = await page.locator('xpath=//a[@href]').evaluateAll(
         (els) => els.map((el) => (el as unknown as Attr).value),
     );
 
