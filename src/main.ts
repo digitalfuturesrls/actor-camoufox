@@ -94,18 +94,7 @@ const crawler = new PlaywrightCrawler({
                 log.warning('Cookie consent simulation failed', { error: String(err) });
             }
         },
-        // Block trackers and analytics domains
-        async ({ page }) => {
-            await page.route('**/*', async (route) => {
-                const url = route.request().url();
-                const shouldBlock = BLOCKED_PATTERNS.some((pattern) => pattern.test(url));
-                if (shouldBlock) {
-                    await route.abort('blockedbyclient');
-                } else {
-                    await route.continue();
-                }
-            });
-        },
+
     ],
     postNavigationHooks: [
         // Human-like behavior: simulate reading after page load
