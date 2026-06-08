@@ -1,0 +1,179 @@
+{
+  "version": 3,
+  "chatId": "1780922392896-rw21iy5",
+  "createdAt": "2026-06-08T12:39:52.902Z",
+  "updatedAt": "2026-06-08T12:43:00.565Z",
+  "entries": [
+    {
+      "type": "user_message",
+      "agent": "user",
+      "content": "stampa il body nella pagina sull'url",
+      "timestamp": "2026-06-08T12:40:04.307Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "File: src/routes.ts (153 lines) [hash:97175bf5]\n1|import { createPlaywrightRouter } from '@crawlee/playwright';\n2|\n3|export const router = createPlaywrightRouter();\n4|\n5|router.addDefaultHandler(async ({ request, page, log, pushData }) => {\n6|    const warmupUrl = request.url;\n7|    const targetUrl = request.userData?.targetUrl as string | undefined;\n8|\n9|    log.info(`Warmup on first URL: ${warmupUrl}`);\n10|\n11|    // Warmup: scroll naturale e comportamento umano sulla pagina corrente\n12|    await page.evaluate(async () => {\n13|        const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));\n14|        const totalHeight = document.body.scrollHeight;\n15|        const step = totalHeight / 8;\n16|\n17|        // Scendi lentamente\n18|        for (let i = 1; i <= 8; i++) {\n19|            window.scrollTo({ top: i * step, behavior: 'smooth' });\n20|            await delay(400 + Math.random() * 600);\n21|        }\n22|\n23|        // Pausa di lettura\n24|        await delay(1000 + Math.random() * 2000);\n25|\n26|        // Risali\n27|        for (let i = 7; i >= 0; i--) {\n28|            window.scrollTo({ top: i * step, behavior: 'smooth' });\n29|            await delay(300 + Math.random() * 400);\n30|        }\n31|    });\n32|\n33|    log.info('Warmup completed');\n34|\n35|    // Se non c'e una seconda URL, termina qui\n36|    if (!targetUrl) {\n37|        log.info('No targetUrl provided, warmup only');\n38|        await pushData({\n39|            sourceUrl: warmupUrl,\n40|            timestamp: new Date().toISOString(),\n41|        });\n42|        return;\n43|    }\n44|\n45|    // Naviga alla seconda pagina con goto\n46|    log.info(`Navigating to target URL: ${targetUrl}`);\n47|    await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });\n48|\n49|    // Attesa casuale per simulare lettura pagina\n50|    await page.waitForTimeout(1500 + Math.random() * 2500);\n51|\n52|    // Progressive multi-step scroll to trigger lazy-loaded content\n53|    const scrollStep = 600;\n54|    const maxScrolls = 20;\n55|    let scrollCount = 0;\n56|    let lastHeight = await page.evaluate(() => document.body.scrollHeight);\n57|    let stalledCount = 0;\n58|    let finalScrollY = 0;\n59|\n60|    try {\n61|        for (let i = 0; i < maxScrolls; i++) {\n62|            await page.evaluate(\n63|                (step) => window.scrollBy(0, step),\n64|                scrollStep,\n65|            );\n66|            await page.waitForTimeout(500);\n67|\n68|            const { scrollY, scrollHeight, innerHeight } = await page.evaluate(() => ({\n69|                scrollY: window.scrollY,\n70|                scrollHeight: document.body.scrollHeight,\n71|                innerHeight: window.innerHeight,\n72|            }));\n73|\n74|            finalScrollY = scrollY;\n75|            scrollCount++;\n76|\n77|            // Break if bottom reached\n78|            if (scrollY + innerHeight >= scrollHeight) {\n79|                log.info(`Scroll ${scrollCount}: bottom reached at scrollY=${scrollY}`);\n80|                break;\n81|            }\n82|\n83|            // Break if content height hasn't increased for 3 consecutive scrolls\n84|            if (scrollHeight === lastHeight) {\n85|                stalledCount++;\n86|                if (stalledCount >= 3) {\n87|                    log.info(`Scroll ${scrollCount}: content stalled, breaking`);\n88|                    break;\n89|                }\n90|            } else {\n91|                stalledCount = 0;\n92|                lastHeight = scrollHeight;\n93|            }\n94|        }\n95|\n96|        log.info(`Scroll complete: ${scrollCount} scrolls, final scrollY=${finalScrollY}`);\n97|    } catch (err) {\n98|        log.warning(`Progressive scroll failed, falling back to single scroll: ${err}`);\n99|        try {\n100|            const fallback = await page.evaluate(() => document.body.scrollHeight);\n101|            const fallbackScroll = Math.min(fallback * 0.3, 800);\n102|            await page.evaluate((y) => window.scrollTo(0, y), fallbackScroll);\n103|            await page.waitForTimeout(1000);\n104|        } catch {\n105|            // ignore\n106|        }\n107|    }\n108|\n109|    // ─── DEBUG: page state ───────────────────────────────\n110|    console.log('\\u{1F50D} Page URL:', request.url);\n111|    console.log('\\u{1F4D0} Scroll position:', await page.evaluate(() => window.scrollY));\n112|    console.log('\\u{1F4CF} Page height:', await page.evaluate(() => document.body.scrollHeight));\n113|\n114|    // Screenshot for visual inspection\n115|    try {\n116|        await page.screenshot({ path: 'screenshots/debug-fullpage.png', fullPage: true });\n117|        console.log('\\u{1F4F7} Screenshot saved: screenshots/debug-fullpage.png');\n118|    } catch (err) {\n119|        console.warn('\\u{26A0} Screenshot failed:', err);\n120|    }\n121|\n122|    // ─── DEBUG: link extraction ──────────────────────────\n123|    log.info('Extracting announcements with xpath...');\n124|    const annunciLinks = await page.locator('xpath=//a[contains(@href, \"annunci\")]').evaluateAll(\n125|        (els) =>\n126|            els.map((el) => ({\n127|                href: el.getAttribute('href') ?? '',\n128|                text: el.textContent?.trim() ?? '',\n129|            })),\n130|    );\n131|\n132|    const annunciCount = annunciLinks.length;\n133|    console.log(`\\u{1F50D} Annunci links found (href contains 'annunci'): ${annunciCount}`);\n134|    if (annunciCount > 0) {\n135|        console.log(`\\u{1F4A1} First ${Math.min(10, annunciCount)} annunci links:`);\n136|        annunciLinks.slice(0, 10).forEach((l, i) =>\n137|            console.log(`  [${i + 1}] href=${l.href}  text=${l.text?.substring(0, 80).replace(/\\s+/g, ' ')}`), // eslint-disable-line no-console\n138|        );\n139|    }\n140|\n141|    // Use hrefs (correct extraction) for dataset push\n142|    const hrefs = annunciLinks.map((l) => l.href);\n143|\n144|    log.info(`Found ${hrefs.length} links with href containing \"annunci\"`);\n145|\n146|    await pushData({\n147|        warmupUrl,\n148|        targetUrl,\n149|        announcementLinks: hrefs,\n150|        extractedAt: new Date().toISOString(),\n151|    });\n152|});\n153|",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 6090,
+        "storedSize": 6090,
+        "artifactId": "tool_result-2026-06-08T12-40-06-787Z-kjbi8d"
+      },
+      "timestamp": "2026-06-08T12:40:06.790Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": "Aggiungo un log del body HTML della pagina target nella sezione debug, dopo lo scroll e prima dell'estrazione link.\n\n",
+      "timestamp": "2026-06-08T12:40:10.006Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "Replaced 1 occurrence in src/routes.ts.\nReplaced content in src/routes.ts.",
+      "metadata": {
+        "toolName": "edit_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 74,
+        "storedSize": 74,
+        "artifactId": "tool_result-2026-06-08T12-40-12-073Z-l70u82"
+      },
+      "timestamp": "2026-06-08T12:40:12.076Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": "Ho aggiunto la stampa del body HTML della pagina nella sezione debug, dopo lo scroll e subito prima dello screenshot:\n\n```typescript\n// ─── DEBUG: page body HTML ───────────────────────────\nconst bodyHTML = await page.evaluate(() => document.body.innerHTML.substring(0, 5000));\nconsole.log('\\u{1F4C4} Body HTML (first 5000 chars):\\n', bodyHTML);\n```\n\nVerranno stampati i primi 5000 caratteri dell'`innerHTML` del body della pagina target, così da ispezionare il markup effettivo.",
+      "timestamp": "2026-06-08T12:40:15.043Z"
+    },
+    {
+      "type": "user_message",
+      "agent": "user",
+      "content": "no tutto",
+      "timestamp": "2026-06-08T12:40:29.425Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": "Ho capito, vuoi stampare tutto il body HTML senza il limite dei 5000 caratteri. Aggiorno subito",
+      "timestamp": "2026-06-08T12:40:31.887Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "File: src/routes.ts (lines 109-114 of 157) [hash:6303d1bb]\n109|    // ─── DEBUG: page state ───────────────────────────────\n110|    console.log('\\u{1F50D} Page URL:', request.url);\n111|    console.log('\\u{1F4D0} Scroll position:', await page.evaluate(() => window.scrollY));\n112|    console.log('\\u{1F4CF} Page height:', await page.evaluate(() => document.body.scrollHeight));\n113|\n114|    // ─── DEBUG: page body HTML ───────────────────────────",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 446,
+        "storedSize": 446,
+        "artifactId": "tool_result-2026-06-08T12-40-31-892Z-rl3857"
+      },
+      "timestamp": "2026-06-08T12:40:31.895Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "File: src/routes.ts (lines 109-125 of 157) [hash:6303d1bb]\n109|    // ─── DEBUG: page state ───────────────────────────────\n110|    console.log('\\u{1F50D} Page URL:', request.url);\n111|    console.log('\\u{1F4D0} Scroll position:', await page.evaluate(() => window.scrollY));\n112|    console.log('\\u{1F4CF} Page height:', await page.evaluate(() => document.body.scrollHeight));\n113|\n114|    // ─── DEBUG: page body HTML ───────────────────────────\n115|    const bodyHTML = await page.evaluate(() => document.body.innerHTML.substring(0, 5000));\n116|    console.log('\\u{1F4C4} Body HTML (first 5000 chars):\\n', bodyHTML);\n117|\n118|    // Screenshot for visual inspection\n119|    try {\n120|        await page.screenshot({ path: 'screenshots/debug-fullpage.png', fullPage: true });\n121|        console.log('\\u{1F4F7} Screenshot saved: screenshots/debug-fullpage.png');\n122|    } catch (err) {\n123|        console.warn('\\u{26A0} Screenshot failed:', err);\n124|    }\n125|",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 964,
+        "storedSize": 964,
+        "artifactId": "tool_result-2026-06-08T12-40-33-919Z-u7f8k8"
+      },
+      "timestamp": "2026-06-08T12:40:33.922Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": "Rimuovo il limite di 5000 caratteri e stampo tutto il body HTML",
+      "timestamp": "2026-06-08T12:40:37.349Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "Replaced 1 occurrence in src/routes.ts.\nReplaced content in src/routes.ts.",
+      "metadata": {
+        "toolName": "edit_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 74,
+        "storedSize": 74,
+        "artifactId": "tool_result-2026-06-08T12-40-39-417Z-cidhwk"
+      },
+      "timestamp": "2026-06-08T12:40:39.419Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": "Fatto — ora stampa l'**intero** body HTML senza limiti:\n\n```typescript\nconst bodyHTML = await page.evaluate(() => document.body.innerHTML);\nconsole.log('\\u{1F4C4} Body HTML (full):\\n', bodyHTML);\n```",
+      "timestamp": "2026-06-08T12:40:41.385Z"
+    },
+    {
+      "type": "user_message",
+      "agent": "user",
+      "content": "il body deve essere di targeturl",
+      "timestamp": "2026-06-08T12:42:40.225Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": "Hai ragione, al momento il log della `Page URL` mostra `request.url` (che è la warmup), ma il body HTML viene estratto dopo il `page.goto` a `targetUrl`, quindi è già corretto. Rendo esplicita la cosa: stampo `targetUrl` invece di `request.url` per il debug del body",
+      "timestamp": "2026-06-08T12:42:46.064Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "File: src/routes.ts (lines 108-120 of 157) [hash:9443cdaf]\n108|\n109|    // ─── DEBUG: page state ───────────────────────────────\n110|    console.log('\\u{1F50D} Page URL:', request.url);\n111|    console.log('\\u{1F4D0} Scroll position:', await page.evaluate(() => window.scrollY));\n112|    console.log('\\u{1F4CF} Page height:', await page.evaluate(() => document.body.scrollHeight));\n113|\n114|    // ─── DEBUG: page body HTML ───────────────────────────\n115|    const bodyHTML = await page.evaluate(() => document.body.innerHTML);\n116|    console.log('\\u{1F4C4} Body HTML (full):\\n', bodyHTML);\n117|\n118|    // Screenshot for visual inspection\n119|    try {\n120|        await page.screenshot({ path: 'screenshots/debug-fullpage.png', fullPage: true });",
+      "metadata": {
+        "toolName": "read_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 750,
+        "storedSize": 750,
+        "artifactId": "tool_result-2026-06-08T12-42-46-070Z-eka20s"
+      },
+      "timestamp": "2026-06-08T12:42:46.073Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": "Il body HTML viene già estratto dopo il `page.goto(targetUrl)`, quindi è effettivamente quello di `targetUrl`. Rendo esplicito il log cambiando `request.url` → `targetUrl`:\n\n",
+      "timestamp": "2026-06-08T12:42:55.873Z"
+    },
+    {
+      "type": "tool_result",
+      "agent": "main",
+      "content": "Replaced 1 occurrence in src/routes.ts.\nReplaced content in src/routes.ts.",
+      "metadata": {
+        "toolName": "edit_file",
+        "args": {},
+        "persistenceMode": "prompt_mirror",
+        "truncated": false,
+        "originalSize": 74,
+        "storedSize": 74,
+        "artifactId": "tool_result-2026-06-08T12-42-57-925Z-2tdz4p"
+      },
+      "timestamp": "2026-06-08T12:42:57.929Z"
+    },
+    {
+      "type": "agent_response",
+      "agent": "main",
+      "content": "Fatto — ora i log di debug fanno riferimento esplicito a `targetUrl`:\n\n- `Page URL:` → stampa `targetUrl` invece di `request.url`\n- `Body HTML (full) for targetUrl:` → intestazione chiara che il body è della pagina di destinazione",
+      "timestamp": "2026-06-08T12:43:00.565Z"
+    }
+  ]
+}

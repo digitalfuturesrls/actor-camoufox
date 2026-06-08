@@ -106,10 +106,14 @@ router.addDefaultHandler(async ({ request, page, log, pushData }) => {
         }
     }
 
-    // ─── DEBUG: page state ───────────────────────────────
-    console.log('\u{1F50D} Page URL:', request.url);
+    // ─── DEBUG: page state (for targetUrl) ─────────────────
+    console.log('\u{1F50D} Page URL:', targetUrl);
     console.log('\u{1F4D0} Scroll position:', await page.evaluate(() => window.scrollY));
     console.log('\u{1F4CF} Page height:', await page.evaluate(() => document.body.scrollHeight));
+
+    // ─── DEBUG: page body HTML (targetUrl) ───────────────
+    const bodyHTML = await page.evaluate(() => document.body.innerHTML);
+    console.log('\u{1F4C4} Body HTML (full) for targetUrl:\n', bodyHTML);
 
     // Screenshot for visual inspection
     try {
